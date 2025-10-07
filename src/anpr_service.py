@@ -141,19 +141,37 @@ class ANPRService:
     async def _handle_vehicle_detection(self):
         """Handle TCP push event - record and process."""
         try:
-            logger.info("Motion event received via TCP push - starting recording")
+            logger.info("Vehicle detected - starting recording with settings")
 
-            # Apply before-recording settings if configured
+            # Start recording and settings application in parallel
             if hasattr(self.config, 'before_recording_enabled') and self.config.before_recording_enabled:
-                await self.camera.apply_recording_settings('before')
+                # Apply settings and start recording at the SAME time
+                settings_task = asyncio.create_task(self.camera.apply_recording_settings('before'))
+                record_task = asyncio.create_task(
+                    self.camera._record_rtsp_and_extract_frames(self.config.recording_duration)
+                )
+                
+                # Wait for both to complete
+                settings_result, frames = await asyncio.gather(settings_task, record_task)
+                
+                if settings_result:
+                    logger.info("✅ Before-recording settings applied during recording")
+                else:
+                    logger.warning("⚠️ Before-recording settings failed (recording still captured)")
+            else:
+                # No settings - just record
+                frames = await self.camera._record_rtsp_and_extract_frames(self.config.recording_duration)
 
-            # Record RTSP stream
-            frames = await self.camera._record_rtsp_and_extract_frames(self.config.recording_duration)
-
-            # Apply after-recording settings if configured
+            # Restore settings immediately after recording
             if hasattr(self.config, 'after_recording_enabled') and self.config.after_recording_enabled:
-                await self.camera.apply_recording_settings('after')
+                logger.info("Restoring after-recording settings...")
+                success = await self.camera.apply_recording_settings('after')
+                if success:
+                    logger.info("✅ After-recording settings restored")
+                else:
+                    logger.warning("⚠️ After-recording settings failed")
 
+            # Process frames
             if frames:
                 logger.info(f"Processing {len(frames)} frames...")
                 await self._process_detection(frames)

@@ -200,19 +200,33 @@ class CameraClient:
     async def apply_recording_settings(self, mode: str) -> bool:
         """Apply before/after recording settings from config."""
         try:
+            # Get settings from config
             if mode == 'before' and hasattr(self.config, 'before_recording_settings'):
                 settings = self.config.before_recording_settings
-                logger.info("Applying before-recording settings...")
             elif mode == 'after' and hasattr(self.config, 'after_recording_settings'):
                 settings = self.config.after_recording_settings
-                logger.info("Applying after-recording settings...")
             else:
-                return False
+                return False  # No settings configured
 
-            return await self.set_isp_settings(settings)
+            if not settings:
+                return False  # Empty settings
+
+            # Log what we're applying
+            logger.debug(f"{mode.capitalize()} settings: {settings}")
+
+            # Apply settings with single retry
+            for attempt in range(2):
+                success = await self.set_isp_settings(settings)
+                if success:
+                    return True
+                if attempt == 0:  # Retry once
+                    await asyncio.sleep(0.3)
+
+            logger.error(f"❌ Failed to apply {mode}-recording settings")
+            return False
 
         except Exception as e:
-            logger.error(f"Failed to apply {mode}-recording settings: {e}")
+            logger.error(f"Error applying {mode}-recording settings: {e}")
             return False
 
     async def _record_rtsp_and_extract_frames(self, duration_seconds: int = 6) -> List[bytes]:
