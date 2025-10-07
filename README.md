@@ -2,6 +2,34 @@
 
 Automatic Number Plate Recognition (ANPR) system for Reolink cameras with AI vehicle detection.
 
+## Screenshots
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="screenshots/Dashboard.png" alt="Dashboard" width="800"/>
+        <br/>
+        <b>Dashboard</b> - Real-time detections with plate crops
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <img src="screenshots/config.png" alt="Configuration" width="800"/>
+        <br/>
+        <b>Configuration</b> - Camera & ALPR settings
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <img src="screenshots/config2.png" alt="Advanced Settings" width="800"/>
+        <br/>
+        <b>Advanced Settings</b> - Recording & notification options
+      </td>
+    </tr>
+  </table>
+</div>
+
 ## Features
 
 - ✅ **Real-time Vehicle Detection** - Uses Reolink's built-in AI via TCP push events (Baichuan protocol)
