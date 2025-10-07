@@ -1,0 +1,28 @@
+# ReolinkANPR Dependencies
+# Requires Python 3.11 or higher for TCP push event support
+
+# Core Dependencies
+reolink_aio>=0.10.0
+fast-alpr
+onnxruntime  # Required by fast-alpr
+opencv-python-headless
+numpy
+PyYAML
+
+# Database and Web Interface
+aiosqlite>=0.19.0
+Flask>=3.0.0
+
+# Async Support
+nest-asyncio  # Required for Flask + asyncio integration
+aiohttp>=3.9.0  # Required for notifications (Telegram, Home Assistant)
+
+# Utilities
+python-dateutil
+
+# System Requirements (install separately):
+# - Python 3.11+ (REQUIRED for TCP push events via Baichuan protocol)
+# - ffmpeg (for RTSP recording)
+#   Ubuntu/Debian: sudo apt install ffmpeg
+#   macOS: brew install ffmpeg
+#   Windows: Download from ffmpeg.org

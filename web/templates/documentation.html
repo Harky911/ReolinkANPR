@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Documentation - ReolinkANPR{% endblock %}
+
+{% block content %}
+<!-- Main Content -->
+<div class="container mt-4">
+    <h2 class="mb-4"><i class="bi bi-book"></i> Quick Guide</h2>
+
+    <!-- Camera Settings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">📷 Camera Settings</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Camera IP/Host:</strong> Your camera's network address</p>
+            <p><strong>Channel:</strong> Usually 0 for single cameras, 0-7 for NVR systems</p>
+            <p><strong>Recording Duration:</strong> How long to record when a vehicle is detected (recommended: 5-10 seconds)</p>
+        </div>
+    </div>
+
+    <!-- ALPR Settings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">🔍 ALPR Settings</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Detection Model:</strong> Choose based on your device:</p>
+            <ul>
+                <li><code>YOLO v9 Tiny 640</code> - Best for most users (balanced speed/accuracy)</li>
+                <li><code>YOLO v9 Small 608</code> - Best accuracy (requires more power)</li>
+            </ul>
+            <p><strong>OCR Model:</strong> Reads the plate characters</p>
+            <ul>
+                <li><code>CCT Small</code> - Recommended for most users</li>
+            </ul>
+            <p><strong>Minimum Confidence:</strong> Set between 0.8-0.95. Higher = fewer false positives</p>
+        </div>
+    </div>
+
+    <!-- Camera Control -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">🎛️ Camera Control (ISP Settings)</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-3">Fine-tune your camera's image quality for better plate recognition.</p>
+            
+            <h6>Exposure Mode</h6>
+            <ul>
+                <li><strong>Auto:</strong> Let the camera decide (good for general monitoring)</li>
+                <li><strong>Manual:</strong> Lock exposure settings for fast-moving vehicles</li>
+            </ul>
+
+            <h6>Day/Night Mode</h6>
+            <ul>
+                <li><strong>Auto:</strong> Switches automatically based on light</li>
+                <li><strong>Color:</strong> Always use color (not recommended for ANPR)</li>
+                <li><strong>Black & White:</strong> Best for plate recognition - shutter/gain controls work properly</li>
+            </ul>
+            <div class="alert alert-warning mt-2 mb-3">
+                <strong>⚠️ Important:</strong> Use <strong>Black & White</strong> mode for best results! Many Reolink cameras don't properly apply manual shutter/gain settings in Color mode, resulting in blurry plates. Black & White mode ensures your manual exposure settings are respected.
+            </div>
+
+            <h6>Shutter Speed (Manual Mode Only)</h6>
+            <p>Lower values = faster shutter = sharper plates on moving vehicles<br>
+            <em>Tip: For moving cars, try Min=1, Max=4</em></p>
+
+            <h6>Gain (Manual Mode Only)</h6>
+            <p>Controls brightness. Higher = brighter but noisier<br>
+            <em>Tip: Keep Max at 40-60 for cleaner images</em></p>
+        </div>
+    </div>
+
+    <!-- Recording Settings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">⚙️ Advanced: Before/After Recording</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Before Recording:</strong> Temporarily change camera settings when a vehicle is detected (e.g., fast shutter for clear plates)</p>
+            <p><strong>After Recording:</strong> Restore normal settings when done</p>
+            <p class="text-muted"><em>Leave disabled if you're unsure - the default settings work well for most setups</em></p>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">🔔 Notifications</h5>
+        </div>
+        <div class="card-body">
+            <p>Get notified when a license plate is detected.</p>
+            
+            <h6>📱 Telegram</h6>
+            <p>Receive instant messages on your phone:</p>
+            <ol>
+                <li>Message <code>@BotFather</code> on Telegram</li>
+                <li>Send <code>/newbot</code> and follow the prompts</li>
+                <li>Copy your bot token</li>
+                <li>Message your new bot, then visit: <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code></li>
+                <li>Find your <code>chat_id</code> in the response</li>
+                <li>Enter both in the config page</li>
+            </ol>
+
+            <h6>🏠 Home Assistant</h6>
+            <p><strong>This is where it gets powerful!</strong> You can trigger ANY Home Assistant automation:</p>
+            <ul>
+                <li><strong>Open garage door</strong> when your car arrives</li>
+                <li><strong>Turn on lights</strong> when a vehicle is detected</li>
+                <li><strong>Send alerts</strong> for unknown plates</li>
+                <li><strong>Log visitors</strong> to a spreadsheet</li>
+                <li><strong>Play announcements</strong> through smart speakers</li>
+            </ul>
+
+            <p><strong>Setup:</strong></p>
+            <ol>
+                <li>In Home Assistant: Settings → Automations → Create Automation</li>
+                <li>Choose "Webhook" trigger</li>
+                <li>Copy the webhook URL</li>
+                <li>Paste in ReolinkANPR config page</li>
+                <li>Add conditions and actions (e.g., "if plate_number == 'ABC123' then open garage")</li>
+            </ol>
+
+            <p class="text-muted"><strong>Example webhook data:</strong></p>
+            <pre class="bg-dark text-light p-2 rounded"><code>{
+  "plate_number": "ABC123",
+  "confidence": 0.975,
+  "image_path": "images/..."
+}</code></pre>
+        </div>
+    </div>
+
+    <!-- Quick Tips -->
+    <div class="card mb-4 border-primary">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">💡 Quick Tips</h5>
+        </div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li>Start with default settings and adjust only if needed</li>
+                <li><strong>Always use Black & White mode</strong> - shutter/gain work properly (Color mode often ignores manual settings)</li>
+                <li>For fast-moving vehicles: Manual exposure + fast shutter (1-4) + B&W mode</li>
+                <li>Test different settings and check the dashboard for results</li>
+                <li>Lower confidence = more detections (but more false positives)</li>
+                <li><strong>Automate everything with Home Assistant!</strong> Open garage, turn on lights, etc.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Need Help -->
+    <div class="alert alert-info">
+        <strong>Need Help?</strong> Check the <a href="https://github.com/yourusername/ReolinkANPR" class="alert-link">GitHub repository</a> for issues and discussions
+    </div>
+</div>
+{% endblock %}

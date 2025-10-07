@@ -1,0 +1,833 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration - ReolinkANPR{% endblock %}
+
+{% block content %}
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <h2 class="mb-4"><i class="bi bi-gear"></i> Configuration</h2>
+
+        <div id="alertContainer"></div>
+
+        <form id="configForm">
+            <!-- Camera Settings -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-camera"></i> Camera Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="camera_name" class="form-label">Camera Name</label>
+                            <input type="text" class="form-control" id="camera_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="camera_host" class="form-label">Camera IP / Host</label>
+                            <input type="text" class="form-control" id="camera_host" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="camera_username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="camera_username" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="camera_password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="camera_password" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="camera_channel" class="form-label">Camera Channel</label>
+                            <input type="number" class="form-control" id="camera_channel" min="0" required>
+                            <small class="text-muted">Channel number (usually 0 for single camera)</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="recording_duration" class="form-label">Recording Duration (seconds)</label>
+                            <input type="number" class="form-control" id="recording_duration" min="1" max="30" required>
+                            <small class="text-muted">Duration to record when vehicle detected</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ALPR Settings -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-card-text"></i> ALPR Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="detection_model" class="form-label">Detection Model</label>
+                            <select class="form-select" id="detection_model" required>
+                                <option value="yolo-v9-t-256-license-plate-end2end">YOLO v9 Tiny 256 (Fastest)</option>
+                                <option value="yolo-v9-t-384-license-plate-end2end">YOLO v9 Tiny 384</option>
+                                <option value="yolo-v9-t-416-license-plate-end2end">YOLO v9 Tiny 416</option>
+                                <option value="yolo-v9-t-512-license-plate-end2end">YOLO v9 Tiny 512</option>
+                                <option value="yolo-v9-t-640-license-plate-end2end">YOLO v9 Tiny 640 (Recommended)</option>
+                                <option value="yolo-v9-s-608-license-plate-end2end">YOLO v9 Small 608 (Best Accuracy)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="ocr_model" class="form-label">OCR Model</label>
+                            <select class="form-select" id="ocr_model" required>
+                                <option value="cct-xs-v1-global-model">CCT XS (Fastest - 3094 PPS)</option>
+                                <option value="cct-s-v1-global-model">CCT Small (Recommended - 1701 PPS)</option>
+                                <option value="cct-xs-relu-v1-global-model">CCT XS ReLU (Fast - 3208 PPS)</option>
+                                <option value="cct-s-relu-v1-global-model">CCT Small ReLU (1764 PPS)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="min_confidence" class="form-label">Minimum Confidence</label>
+                            <input type="number" class="form-control" id="min_confidence" min="0" max="1" step="0.01" required>
+                            <small class="text-muted">Minimum confidence threshold (0.0 - 1.0)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Settings -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-gear-wide-connected"></i> System Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="log_level" class="form-label">Log Level</label>
+                            <select class="form-select" id="log_level" required>
+                                <option value="DEBUG">DEBUG - Detailed logs</option>
+                                <option value="INFO">INFO - Normal operation (Recommended)</option>
+                                <option value="WARNING">WARNING - Only warnings and errors</option>
+                                <option value="ERROR">ERROR - Only errors</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-bell"></i> Notifications</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="notifications_enabled">
+                        <label class="form-check-label" for="notifications_enabled">
+                            <strong>Enable Notifications</strong>
+                        </label>
+                    </div>
+
+                    <div id="notificationSettings" style="display: none;">
+                        <!-- Home Assistant -->
+                        <h6 class="mt-3">🏠 Home Assistant</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="ha_enabled">
+                            <label class="form-check-label" for="ha_enabled">
+                                Enable Home Assistant Webhook
+                            </label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ha_webhook" class="form-label">Webhook URL</label>
+                            <input type="url" class="form-control" id="ha_webhook" placeholder="http://homeassistant.local:8123/api/webhook/your-webhook-id">
+                            <small class="text-muted">Create a webhook automation in HA, then paste the URL here</small>
+                        </div>
+
+                        <hr>
+
+                        <!-- Telegram -->
+                        <h6 class="mt-3">📱 Telegram</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="telegram_enabled">
+                            <label class="form-check-label" for="telegram_enabled">
+                                Enable Telegram Bot
+                            </label>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="telegram_token" class="form-label">Bot Token</label>
+                                <input type="text" class="form-control" id="telegram_token" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11">
+                                <small class="text-muted">Get from @BotFather on Telegram</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="telegram_chat_id" class="form-label">Chat ID</label>
+                                <input type="text" class="form-control" id="telegram_chat_id" placeholder="123456789">
+                                <small class="text-muted">Your Telegram user/group ID</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-save"></i> Save Configuration
+                </button>
+            </div>
+        </form>
+
+        <!-- Camera Control Settings (Real-time ISP Control) -->
+        <div class="card mb-4 mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-sliders"></i> Camera Control Settings</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Apply real-time camera ISP settings (takes effect immediately)</p>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="isp_exposure" class="form-label">Exposure Mode</label>
+                        <select class="form-select" id="isp_exposure">
+                            <option value="Auto">Auto</option>
+                            <option value="Manual">Manual</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="isp_dayNight" class="form-label">Day/Night Mode</label>
+                        <select class="form-select" id="isp_dayNight">
+                            <option value="Auto">Auto</option>
+                            <option value="Color">Color</option>
+                            <option value="Black&White">Black & White</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="isp_binningMode" class="form-label">Binning Mode</label>
+                        <select class="form-select" id="isp_binningMode">
+                            <option value="1">Auto</option>
+                            <option value="0">Off</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="isp_nr3d" class="form-label">3D DNR (Noise Reduction)</label>
+                        <select class="form-select" id="isp_nr3d">
+                            <option value="1">On</option>
+                            <option value="0">Off</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row" id="isp_manual_settings" style="display: none;">
+                    <div class="col-md-3 mb-3">
+                        <label for="isp_gain_min" class="form-label">Gain Min</label>
+                        <input type="number" class="form-control" id="isp_gain_min" min="1" max="100" value="1">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="isp_gain_max" class="form-label">Gain Max</label>
+                        <input type="number" class="form-control" id="isp_gain_max" min="1" max="100" value="100">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="isp_shutter_min" class="form-label">Shutter Min</label>
+                        <input type="number" class="form-control" id="isp_shutter_min" min="0" max="125" value="0">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="isp_shutter_max" class="form-label">Shutter Max</label>
+                        <input type="number" class="form-control" id="isp_shutter_max" min="0" max="125" value="125">
+                    </div>
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-success" id="applyIspBtn">
+                        <i class="bi bi-check-circle"></i> Apply Camera Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Recording Settings -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-camera-reels"></i> Advanced Recording Settings</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Optional: Configure camera settings to apply before and after recording</p>
+
+                <!-- Before Recording Settings -->
+                <div class="mb-4">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="before_recording_enabled">
+                        <label class="form-check-label" for="before_recording_enabled">
+                            <strong>Enable Before Recording Settings</strong>
+                        </label>
+                    </div>
+                    <div id="beforeRecordingSettings" style="display: none;">
+                        <h6 class="text-muted mb-3">Settings to apply when recording starts:</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="before_exposure" class="form-label">Exposure Mode</label>
+                                <select class="form-select" id="before_exposure">
+                                    <option value="Auto">Auto</option>
+                                    <option value="Manual">Manual</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="before_dayNight" class="form-label">Day/Night Mode</label>
+                                <select class="form-select" id="before_dayNight">
+                                    <option value="Auto">Auto</option>
+                                    <option value="Color">Color</option>
+                                    <option value="Black&White">Black & White</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="before_binningMode" class="form-label">Binning Mode</label>
+                                <select class="form-select" id="before_binningMode">
+                                    <option value="1">Auto</option>
+                                    <option value="0">Off</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="before_nr3d" class="form-label">3D DNR</label>
+                                <select class="form-select" id="before_nr3d">
+                                    <option value="1">On</option>
+                                    <option value="0">Off</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row" id="before_manual_settings" style="display: none;">
+                            <div class="col-md-3 mb-3">
+                                <label for="before_gain_min" class="form-label">Gain Min</label>
+                                <input type="number" class="form-control" id="before_gain_min" min="1" max="100" value="1">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="before_gain_max" class="form-label">Gain Max</label>
+                                <input type="number" class="form-control" id="before_gain_max" min="1" max="100" value="40">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="before_shutter_min" class="form-label">Shutter Min</label>
+                                <input type="number" class="form-control" id="before_shutter_min" min="0" max="125" value="1">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="before_shutter_max" class="form-label">Shutter Max</label>
+                                <input type="number" class="form-control" id="before_shutter_max" min="0" max="125" value="4">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- After Recording Settings -->
+                <div class="mb-3">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="after_recording_enabled">
+                        <label class="form-check-label" for="after_recording_enabled">
+                            <strong>Enable After Recording Settings</strong>
+                        </label>
+                    </div>
+                    <div id="afterRecordingSettings" style="display: none;">
+                        <h6 class="text-muted mb-3">Settings to restore after recording completes:</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="after_exposure" class="form-label">Exposure Mode</label>
+                                <select class="form-select" id="after_exposure">
+                                    <option value="Auto">Auto</option>
+                                    <option value="Manual">Manual</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="after_dayNight" class="form-label">Day/Night Mode</label>
+                                <select class="form-select" id="after_dayNight">
+                                    <option value="Auto">Auto</option>
+                                    <option value="Color">Color</option>
+                                    <option value="Black&White">Black & White</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="after_binningMode" class="form-label">Binning Mode</label>
+                                <select class="form-select" id="after_binningMode">
+                                    <option value="1">Auto</option>
+                                    <option value="0">Off</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="after_nr3d" class="form-label">3D DNR</label>
+                                <select class="form-select" id="after_nr3d">
+                                    <option value="1">On</option>
+                                    <option value="0">Off</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row" id="after_manual_settings" style="display: none;">
+                            <div class="col-md-3 mb-3">
+                                <label for="after_gain_min" class="form-label">Gain Min</label>
+                                <input type="number" class="form-control" id="after_gain_min" min="1" max="100" value="1">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="after_gain_max" class="form-label">Gain Max</label>
+                                <input type="number" class="form-control" id="after_gain_max" min="1" max="100" value="100">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="after_shutter_min" class="form-label">Shutter Min</label>
+                                <input type="number" class="form-control" id="after_shutter_min" min="0" max="125" value="0">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="after_shutter_max" class="form-label">Shutter Max</label>
+                                <input type="number" class="form-control" id="after_shutter_max" min="0" max="125" value="125">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary" id="saveRecordingSettingsBtn">
+                        <i class="bi bi-save"></i> Save Recording Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+        // Load configuration
+        async function loadConfig() {
+            const response = await fetch('/api/config');
+            const config = await response.json();
+
+            // Populate form
+            document.getElementById('camera_name').value = config.camera.name;
+            document.getElementById('camera_host').value = config.camera.host;
+            document.getElementById('camera_username').value = config.camera.username;
+            document.getElementById('camera_password').value = config.camera.password;
+            document.getElementById('camera_channel').value = config.camera.channel;
+            document.getElementById('recording_duration').value = config.camera.recording_duration;
+            document.getElementById('detection_model').value = config.alpr.detection_model;
+            document.getElementById('ocr_model').value = config.alpr.ocr_model;
+            document.getElementById('min_confidence').value = config.alpr.min_confidence;
+            document.getElementById('log_level').value = config.system.log_level;
+            
+            // Load notification settings
+            if (config.notifications) {
+                document.getElementById('notifications_enabled').checked = config.notifications.enabled || false;
+                
+                if (config.notifications.enabled) {
+                    document.getElementById('notificationSettings').style.display = 'block';
+                }
+                
+                if (config.notifications.home_assistant) {
+                    document.getElementById('ha_enabled').checked = config.notifications.home_assistant.enabled || false;
+                    document.getElementById('ha_webhook').value = config.notifications.home_assistant.webhook_url || '';
+                }
+                
+                if (config.notifications.telegram) {
+                    document.getElementById('telegram_enabled').checked = config.notifications.telegram.enabled || false;
+                    document.getElementById('telegram_token').value = config.notifications.telegram.bot_token || '';
+                    document.getElementById('telegram_chat_id').value = config.notifications.telegram.chat_id || '';
+                }
+            }
+        }
+
+        // Save configuration
+        document.getElementById('configForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const config = {
+                camera: {
+                    name: document.getElementById('camera_name').value,
+                    host: document.getElementById('camera_host').value,
+                    username: document.getElementById('camera_username').value,
+                    password: document.getElementById('camera_password').value,
+                    channel: parseInt(document.getElementById('camera_channel').value),
+                    recording_duration: parseInt(document.getElementById('recording_duration').value)
+                },
+                alpr: {
+                    detection_model: document.getElementById('detection_model').value,
+                    ocr_model: document.getElementById('ocr_model').value,
+                    min_confidence: parseFloat(document.getElementById('min_confidence').value)
+                },
+                system: {
+                    log_level: document.getElementById('log_level').value,
+                    log_file: 'logs/anpr.log',
+                    database_path: 'data/anpr.db',
+                    web_host: '0.0.0.0',
+                    web_port: 5001
+                },
+                notifications: {
+                    enabled: document.getElementById('notifications_enabled').checked,
+                    home_assistant: {
+                        enabled: document.getElementById('ha_enabled').checked,
+                        webhook_url: document.getElementById('ha_webhook').value
+                    },
+                    telegram: {
+                        enabled: document.getElementById('telegram_enabled').checked,
+                        bot_token: document.getElementById('telegram_token').value,
+                        chat_id: document.getElementById('telegram_chat_id').value
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', result.message);
+                } else {
+                    showAlert('danger', result.message);
+                }
+            } catch (error) {
+                showAlert('danger', 'Error saving configuration: ' + error.message);
+            }
+        });
+
+        function showAlert(type, message) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.getElementById('alertContainer').innerHTML = alertHtml;
+        }
+
+        // Load config on page load
+        loadConfig();
+
+        // Camera Control Settings
+        document.getElementById('applyIspBtn').addEventListener('click', async () => {
+            const exposureMode = document.getElementById('isp_exposure').value;
+            
+            const settings = {
+                exposure: exposureMode,
+                dayNight: document.getElementById('isp_dayNight').value,
+                binningMode: parseInt(document.getElementById('isp_binningMode').value),
+                nr3d: parseInt(document.getElementById('isp_nr3d').value)
+            };
+
+            // Only include gain/shutter if exposure mode is Manual
+            if (exposureMode === 'Manual') {
+                settings.gain = {
+                    min: parseInt(document.getElementById('isp_gain_min').value),
+                    max: parseInt(document.getElementById('isp_gain_max').value)
+                };
+                settings.shutter = {
+                    min: parseInt(document.getElementById('isp_shutter_min').value),
+                    max: parseInt(document.getElementById('isp_shutter_max').value)
+                };
+            }
+
+            try {
+                const response = await fetch('/api/camera/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', 'Camera settings applied successfully!');
+                } else {
+                    showAlert('danger', 'Failed to apply camera settings: ' + result.message);
+                }
+            } catch (error) {
+                showAlert('danger', 'Error applying camera settings: ' + error.message);
+            }
+        });
+
+        // Load current ISP settings
+        async function loadIspSettings() {
+            console.log('=== loadIspSettings() called ===');
+            try {
+                console.log('Fetching from /api/camera/settings...');
+                const response = await fetch('/api/camera/settings');
+                console.log('Response status:', response.status, response.statusText);
+                
+                const result = await response.json();
+                console.log('API Response:', result);
+
+                if (result.success && result.settings) {
+                    const settings = result.settings;
+                    console.log('Settings object:', settings);
+                    
+                    console.log('Setting exposure dropdown to:', settings.exposure);
+                    if (settings.exposure) document.getElementById('isp_exposure').value = settings.exposure;
+                    
+                    console.log('Setting dayNight dropdown to:', settings.dayNight);
+                    if (settings.dayNight) document.getElementById('isp_dayNight').value = settings.dayNight;
+                    
+                    console.log('Setting binningMode dropdown to:', settings.binningMode);
+                    if (settings.binningMode !== undefined) document.getElementById('isp_binningMode').value = settings.binningMode;
+                    
+                    console.log('Setting nr3d dropdown to:', settings.nr3d);
+                    if (settings.nr3d !== undefined) document.getElementById('isp_nr3d').value = settings.nr3d;
+
+                    if (settings.gain) {
+                        console.log('Setting gain min/max to:', settings.gain);
+                        if (settings.gain.min !== undefined) document.getElementById('isp_gain_min').value = settings.gain.min;
+                        if (settings.gain.max !== undefined) document.getElementById('isp_gain_max').value = settings.gain.max;
+                    }
+
+                    if (settings.shutter) {
+                        console.log('Setting shutter min/max to:', settings.shutter);
+                        if (settings.shutter.min !== undefined) document.getElementById('isp_shutter_min').value = settings.shutter.min;
+                        if (settings.shutter.max !== undefined) document.getElementById('isp_shutter_max').value = settings.shutter.max;
+                    }
+
+                    // Trigger visibility check for manual settings
+                    if (settings.exposure === 'Manual') {
+                        console.log('Showing manual settings (exposure is Manual)');
+                        document.getElementById('isp_manual_settings').style.display = 'flex';
+                    } else {
+                        console.log('Hiding manual settings (exposure is', settings.exposure + ')');
+                    }
+                    
+                    // Verify what's actually in the dropdowns after setting
+                    console.log('=== VERIFICATION ===');
+                    console.log('Exposure dropdown now shows:', document.getElementById('isp_exposure').value);
+                    console.log('DayNight dropdown now shows:', document.getElementById('isp_dayNight').value);
+                    console.log('BinningMode dropdown now shows:', document.getElementById('isp_binningMode').value);
+                    console.log('nr3d dropdown now shows:', document.getElementById('isp_nr3d').value);
+                    console.log('=== END VERIFICATION ===');
+                } else {
+                    console.error('API call failed or returned no settings:', result);
+                    if (!result.success) {
+                        console.error('Error message:', result.message);
+                        showAlert('warning', 'Could not load camera settings: ' + (result.message || 'Unknown error'));
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading ISP settings:', error);
+                showAlert('danger', 'Error loading camera settings: ' + error.message);
+            }
+        }
+
+        // Load ISP settings on page load
+        loadIspSettings();
+
+        // Toggle gain/shutter visibility based on exposure mode
+        document.getElementById('isp_exposure').addEventListener('change', function() {
+            const manualSettings = document.getElementById('isp_manual_settings');
+            manualSettings.style.display = this.value === 'Manual' ? 'flex' : 'none';
+        });
+
+        // Trigger initial visibility check
+        if (document.getElementById('isp_exposure').value === 'Manual') {
+            document.getElementById('isp_manual_settings').style.display = 'flex';
+        }
+
+        document.getElementById('before_exposure').addEventListener('change', function() {
+            const manualSettings = document.getElementById('before_manual_settings');
+            manualSettings.style.display = this.value === 'Manual' ? 'flex' : 'none';
+        });
+
+        document.getElementById('after_exposure').addEventListener('change', function() {
+            const manualSettings = document.getElementById('after_manual_settings');
+            manualSettings.style.display = this.value === 'Manual' ? 'flex' : 'none';
+        });
+
+        // Toggle Before Recording Settings visibility
+        document.getElementById('before_recording_enabled').addEventListener('change', function() {
+            const settingsDiv = document.getElementById('beforeRecordingSettings');
+            settingsDiv.style.display = this.checked ? 'block' : 'none';
+        });
+
+        // Toggle After Recording Settings visibility
+        document.getElementById('after_recording_enabled').addEventListener('change', function() {
+            const settingsDiv = document.getElementById('afterRecordingSettings');
+            settingsDiv.style.display = this.checked ? 'block' : 'none';
+        });
+
+        // Load recording settings from config
+        async function loadRecordingSettings() {
+            console.log('=== loadRecordingSettings() called ===');
+            const response = await fetch('/api/config');
+            const config = await response.json();
+            console.log('Config loaded:', config);
+
+            if (config.recording) {
+                console.log('Recording settings found:', config.recording);
+                
+                // Before recording
+                if (config.recording.before_recording_enabled) {
+                    console.log('Before recording ENABLED');
+                    document.getElementById('before_recording_enabled').checked = true;
+                    document.getElementById('beforeRecordingSettings').style.display = 'block';
+
+                    const before = config.recording.before_recording_settings || {};
+                    console.log('Before recording settings:', before);
+                    
+                    if (before.exposure) document.getElementById('before_exposure').value = before.exposure;
+                    if (before.dayNight) document.getElementById('before_dayNight').value = before.dayNight;
+                    if (before.binningMode !== undefined) document.getElementById('before_binningMode').value = before.binningMode;
+                    if (before.nr3d !== undefined) document.getElementById('before_nr3d').value = before.nr3d;
+                    if (before.gain) {
+                        if (before.gain.min !== undefined) document.getElementById('before_gain_min').value = before.gain.min;
+                        if (before.gain.max !== undefined) document.getElementById('before_gain_max').value = before.gain.max;
+                    }
+                    if (before.shutter) {
+                        if (before.shutter.min !== undefined) document.getElementById('before_shutter_min').value = before.shutter.min;
+                        if (before.shutter.max !== undefined) document.getElementById('before_shutter_max').value = before.shutter.max;
+                    }
+
+                    // Trigger visibility check for manual settings
+                    if (before.exposure === 'Manual') {
+                        console.log('Before exposure is Manual - showing gain/shutter controls');
+                        document.getElementById('before_manual_settings').style.display = 'flex';
+                    } else {
+                        console.log('Before exposure is', before.exposure, '- hiding gain/shutter controls');
+                        document.getElementById('before_manual_settings').style.display = 'none';
+                    }
+                } else {
+                    console.log('Before recording DISABLED');
+                }
+
+                // After recording
+                if (config.recording.after_recording_enabled) {
+                    console.log('After recording ENABLED');
+                    document.getElementById('after_recording_enabled').checked = true;
+                    document.getElementById('afterRecordingSettings').style.display = 'block';
+
+                    const after = config.recording.after_recording_settings || {};
+                    console.log('After recording settings:', after);
+                    
+                    if (after.exposure) document.getElementById('after_exposure').value = after.exposure;
+                    if (after.dayNight) document.getElementById('after_dayNight').value = after.dayNight;
+                    if (after.binningMode !== undefined) document.getElementById('after_binningMode').value = after.binningMode;
+                    if (after.nr3d !== undefined) document.getElementById('after_nr3d').value = after.nr3d;
+                    if (after.gain) {
+                        if (after.gain.min !== undefined) document.getElementById('after_gain_min').value = after.gain.min;
+                        if (after.gain.max !== undefined) document.getElementById('after_gain_max').value = after.gain.max;
+                    }
+                    if (after.shutter) {
+                        if (after.shutter.min !== undefined) document.getElementById('after_shutter_min').value = after.shutter.min;
+                        if (after.shutter.max !== undefined) document.getElementById('after_shutter_max').value = after.shutter.max;
+                    }
+
+                    // Trigger visibility check for manual settings
+                    if (after.exposure === 'Manual') {
+                        console.log('After exposure is Manual - showing gain/shutter controls');
+                        document.getElementById('after_manual_settings').style.display = 'flex';
+                    } else {
+                        console.log('After exposure is', after.exposure, '- hiding gain/shutter controls');
+                        document.getElementById('after_manual_settings').style.display = 'none';
+                    }
+                } else {
+                    console.log('After recording DISABLED');
+                }
+            } else {
+                console.log('No recording settings in config');
+            }
+            console.log('=== END loadRecordingSettings ===');
+        }
+
+        // Load recording settings on page load
+        loadRecordingSettings();
+
+        // Toggle notification settings visibility
+        document.getElementById('notifications_enabled').addEventListener('change', function() {
+            document.getElementById('notificationSettings').style.display = this.checked ? 'block' : 'none';
+        });
+
+        // Save recording settings
+        document.getElementById('saveRecordingSettingsBtn').addEventListener('click', async () => {
+            console.log('=== Saving Recording Settings ===');
+            try {
+                // First, get current config
+                const response = await fetch('/api/config');
+                const config = await response.json();
+
+                // Build before recording settings
+                const beforeExposure = document.getElementById('before_exposure').value;
+                console.log('Before exposure mode:', beforeExposure);
+                
+                const beforeSettings = {
+                    exposure: beforeExposure,
+                    dayNight: document.getElementById('before_dayNight').value,
+                    binningMode: parseInt(document.getElementById('before_binningMode').value),
+                    nr3d: parseInt(document.getElementById('before_nr3d').value)
+                };
+                
+                // Only include gain/shutter if Manual mode
+                if (beforeExposure === 'Manual') {
+                    console.log('Before is Manual - including gain/shutter');
+                    beforeSettings.gain = {
+                        min: parseInt(document.getElementById('before_gain_min').value),
+                        max: parseInt(document.getElementById('before_gain_max').value)
+                    };
+                    beforeSettings.shutter = {
+                        min: parseInt(document.getElementById('before_shutter_min').value),
+                        max: parseInt(document.getElementById('before_shutter_max').value)
+                    };
+                } else {
+                    console.log('Before is Auto - NOT including gain/shutter');
+                }
+                console.log('Before settings:', beforeSettings);
+
+                // Build after recording settings
+                const afterExposure = document.getElementById('after_exposure').value;
+                console.log('After exposure mode:', afterExposure);
+                
+                const afterSettings = {
+                    exposure: afterExposure,
+                    dayNight: document.getElementById('after_dayNight').value,
+                    binningMode: parseInt(document.getElementById('after_binningMode').value),
+                    nr3d: parseInt(document.getElementById('after_nr3d').value)
+                };
+                
+                // Only include gain/shutter if Manual mode
+                if (afterExposure === 'Manual') {
+                    console.log('After is Manual - including gain/shutter');
+                    afterSettings.gain = {
+                        min: parseInt(document.getElementById('after_gain_min').value),
+                        max: parseInt(document.getElementById('after_gain_max').value)
+                    };
+                    afterSettings.shutter = {
+                        min: parseInt(document.getElementById('after_shutter_min').value),
+                        max: parseInt(document.getElementById('after_shutter_max').value)
+                    };
+                } else {
+                    console.log('After is Auto - NOT including gain/shutter');
+                }
+                console.log('After settings:', afterSettings);
+
+                // Update recording section
+                config.recording = {
+                    before_recording_enabled: document.getElementById('before_recording_enabled').checked,
+                    before_recording_settings: beforeSettings,
+                    after_recording_enabled: document.getElementById('after_recording_enabled').checked,
+                    after_recording_settings: afterSettings
+                };
+                
+                console.log('Full recording config:', config.recording);
+
+                // Save config
+                const saveResponse = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                const result = await saveResponse.json();
+
+                if (result.success) {
+                    showAlert('success', 'Recording settings saved successfully!');
+                } else {
+                    showAlert('danger', 'Failed to save recording settings: ' + result.message);
+                }
+            } catch (error) {
+                showAlert('danger', 'Error saving recording settings: ' + error.message);
+            }
+        });
+</script>
+{% endblock %}

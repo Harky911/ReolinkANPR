@@ -1,0 +1,77 @@
+# ReolinkANPR Configuration Example
+# Copy this file to config.yaml and customize for your setup
+
+# ALPR Settings
+alpr:
+  # Detection model - options:
+  # - yolo-v9-t-256-license-plate-end2end (Fastest)
+  # - yolo-v9-t-640-license-plate-end2end (Recommended)
+  # - yolo-v9-s-608-license-plate-end2end (Best accuracy)
+  detection_model: yolo-v9-t-640-license-plate-end2end
+  
+  # Minimum confidence threshold (0.0 - 1.0)
+  min_confidence: 0.9
+  
+  # OCR model - options:
+  # - cct-xs-v1-global-model (Fastest)
+  # - cct-s-v1-global-model (Recommended)
+  ocr_model: cct-s-v1-global-model
+
+# Camera Settings
+camera:
+  # Camera channel (usually 0 for single camera systems)
+  channel: 0
+  
+  # Camera IP address or hostname
+  host: 192.168.1.100
+  
+  # Camera name (for logging)
+  name: Front Door
+  
+  # Camera credentials
+  username: admin
+  password: CHANGE_ME
+  
+  # Recording duration in seconds when vehicle detected
+  recording_duration: 5
+
+# Optional: Recording Settings
+# Automatically change camera ISP settings during recording
+recording:
+  # Before Recording: Applied when vehicle detected (for sharp plate capture)
+  before_recording_enabled: true
+  before_recording_settings:
+    exposure: Manual        # Manual for fixed shutter speed
+    dayNight: Auto          # Auto, Color, or Black&White
+    binningMode: 0          # 0=Off (sharper), 1=Auto
+    nr3d: 0                 # 0=Off (less blur), 1=On
+    gain:
+      min: 1
+      max: 40              # Lower gain = less noise
+    shutter:
+      min: 1
+      max: 4               # Fast shutter (1-4ms) to freeze motion
+  
+  # After Recording: Applied after recording completes (restore normal settings)
+  after_recording_enabled: true
+  after_recording_settings:
+    exposure: Auto          # Auto for normal viewing
+    dayNight: Auto
+    binningMode: 1          # Auto
+    nr3d: 1                 # On for smoother video
+
+# System Settings
+system:
+  # Database path (relative to project root)
+  database_path: data/anpr.db
+  
+  # Log file path (relative to project root)
+  log_file: logs/anpr.log
+  
+  # Log level: DEBUG, INFO, WARNING, ERROR
+  log_level: INFO
+  
+  # Web interface settings
+  web_host: 0.0.0.0       # 0.0.0.0 = all interfaces, 127.0.0.1 = localhost only
+  web_port: 5001
+

@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv
+
+# Data & Databases
+data/
+*.db
+*.db-journal
+
+# Logs
+logs/
+*.log
+
+# Configuration (contains sensitive info)
+config.yaml
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+.directory
+
+# Images (captured data)
+*.jpg
+*.jpeg
+*.png
+*.gif
+!web/static/**/*.png
+!web/static/**/*.jpg
+!docs/**/*.png
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Security
+*.pem
+*.key
+*.crt
+
+# Local development
+.env
+.env.local
+nohup.out

@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - ReolinkANPR{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Dashboard-specific styles */
+    .events-card {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--bg-secondary);
+        padding: 1.5rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--accent-color);
+    }
+
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Status Bar -->
+<div class="container-fluid px-4 mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <span id="systemStatus" class="me-3">
+                <i class="bi bi-circle-fill text-success"></i> <span id="statusText">Running</span>
+            </span>
+        </div>
+        <button class="btn btn-outline-light btn-sm" onclick="refreshAll()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<div class="container-fluid px-4">
+    <!-- Detection Events -->
+    <div class="row">
+        <div class="col-12">
+            <div class="events-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-camera-video-fill"></i> Recent Detections</h5>
+                    <div class="d-flex gap-2 align-items-center">
+                        <input type="text" class="form-control form-control-sm" id="searchInput" 
+                               placeholder="Search plates..." style="width: 250px;">
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="eventsContainer">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <nav aria-label="Event pagination" id="paginationContainer" class="mt-4"></nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Vehicle Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" alt="Vehicle Image">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentPage = 1;
+    let searchTimeout;
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadEvents(1);
+
+        // Search with debounce
+        document.getElementById('searchInput').addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => loadEvents(1), 500);
+        });
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => loadEvents(currentPage), 30000);
+    });
+
+    function refreshAll() {
+        loadEvents(currentPage);
+    }
+
+    async function loadEvents(page) {
+        currentPage = page;
+        const search = document.getElementById('searchInput').value;
+        
+        try {
+            const response = await fetch(`/api/events?page=${page}&search=${encodeURIComponent(search)}`);
+            const data = await response.json();
+            
+            displayEvents(data.events);
+            displayPagination(data.page, data.pages);
+        } catch (error) {
+            console.error('Error loading events:', error);
+            document.getElementById('eventsContainer').innerHTML = 
+                '<div class="alert alert-danger">Failed to load events</div>';
+        }
+    }
+
+    function displayEvents(events) {
+        const container = document.getElementById('eventsContainer');
+        
+        if (events.length === 0) {
+            container.innerHTML = '<div class="text-center py-5 text-muted">No detections found</div>';
+            return;
+        }
+
+        const html = `
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th style="width: 180px;">Time</th>
+                            <th style="width: 200px;">Vehicle Image</th>
+                            <th style="width: 120px;">Plate Crop</th>
+                            <th style="width: 150px;">Plate Number</th>
+                            <th style="width: 120px;">Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${events.map(event => `
+                            <tr>
+                                <td>${formatDate(event.timestamp)}</td>
+                                <td>
+                                    ${event.image_path ? 
+                                        `<img src="/image/${event.image_path}" 
+                                             class="img-thumbnail" 
+                                             style="max-width: 150px; max-height: 100px; cursor: pointer;" 
+                                             onclick="showImage('/image/${event.image_path}')"
+                                             alt="Vehicle">` : 
+                                        '<span class="text-muted">No image</span>'}
+                                </td>
+                                <td>
+                                    ${event.plate_crop_path ? 
+                                        `<img src="/image/${event.plate_crop_path}" 
+                                             class="img-thumbnail" 
+                                             style="max-width: 100px; cursor: pointer;" 
+                                             onclick="showImage('/image/${event.plate_crop_path}')"
+                                             alt="Plate crop">` : 
+                                        '<span class="text-muted">-</span>'}
+                                </td>
+                                <td>
+                                    ${event.plate_number ? 
+                                        `<span class="badge bg-primary fs-6">${event.plate_number}</span>` : 
+                                        '<span class="text-muted">No plate</span>'}
+                                </td>
+                                <td>
+                                    ${event.confidence ? 
+                                        `<span class="badge bg-success">${(event.confidence * 100).toFixed(1)}%</span>` : 
+                                        '-'}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+    }
+
+    function displayPagination(current, total) {
+        const container = document.getElementById('paginationContainer');
+        
+        if (total <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let html = '<ul class="pagination justify-content-center">';
+        
+        // Previous
+        html += `<li class="page-item ${current === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="loadEvents(${current - 1}); return false;">Previous</a>
+        </li>`;
+        
+        // Pages
+        for (let i = 1; i <= total; i++) {
+            if (i === 1 || i === total || (i >= current - 2 && i <= current + 2)) {
+                html += `<li class="page-item ${i === current ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="loadEvents(${i}); return false;">${i}</a>
+                </li>`;
+            } else if (i === current - 3 || i === current + 3) {
+                html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+            }
+        }
+        
+        // Next
+        html += `<li class="page-item ${current === total ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="loadEvents(${current + 1}); return false;">Next</a>
+        </li>`;
+        
+        html += '</ul>';
+        container.innerHTML = html;
+    }
+
+    function showImage(path) {
+        document.getElementById('modalImage').src = path;
+        new bootstrap.Modal(document.getElementById('imageModal')).show();
+    }
+
+    function formatDate(timestamp) {
+        if (!timestamp) return 'N/A';
+        const isoFormat = timestamp.replace(' ', 'T') + 'Z';
+        const date = new Date(isoFormat);
+        if (isNaN(date.getTime())) return timestamp;
+        return date.toLocaleString();
+    }
+</script>
+{% endblock %}
