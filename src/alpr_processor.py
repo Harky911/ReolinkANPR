@@ -29,7 +29,7 @@ class ALPRProcessor:
         self.alpr = ALPR(
             detector_model=config.detector_model,
             ocr_model=config.ocr_model,
-            detector_conf_thresh=0.3  # Detection confidence (lower than recognition threshold)
+            detector_conf_thresh=0.1  # Detection confidence (lower than recognition threshold)
         )
 
         logger.info(f"FastALPR initialized with {config.detector_model}")
