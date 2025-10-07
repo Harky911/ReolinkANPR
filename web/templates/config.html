@@ -234,6 +234,21 @@
                         <i class="bi bi-check-circle"></i> Apply Camera Settings
                     </button>
                 </div>
+
+                <!-- RTSP Control -->
+                <hr class="my-4">
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label"><i class="bi bi-broadcast"></i> RTSP Streaming</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="rtsp_enabled" checked>
+                            <label class="form-check-label" for="rtsp_enabled">
+                                <span id="rtsp_status">Checking RTSP status...</span>
+                            </label>
+                        </div>
+                        <small class="text-muted">RTSP is required for recording. Auto-enabled on startup.</small>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -612,6 +627,61 @@
 
         // Load ISP settings on page load
         loadIspSettings();
+
+        // Load RTSP status
+        async function loadRtspStatus() {
+            try {
+                const response = await fetch('/api/camera/rtsp/status');
+                const result = await response.json();
+                
+                const checkbox = document.getElementById('rtsp_enabled');
+                const statusText = document.getElementById('rtsp_status');
+                
+                if (result.success) {
+                    checkbox.checked = result.enabled;
+                    statusText.textContent = result.enabled ? 
+                        `RTSP Enabled (Port ${result.port})` : 
+                        'RTSP Disabled';
+                    statusText.className = result.enabled ? 'text-success' : 'text-danger';
+                } else {
+                    statusText.textContent = 'Could not check RTSP status';
+                    statusText.className = 'text-warning';
+                }
+            } catch (error) {
+                console.error('Error loading RTSP status:', error);
+            }
+        }
+
+        // Toggle RTSP when switch is clicked
+        document.getElementById('rtsp_enabled').addEventListener('change', async function() {
+            const newStatus = this.checked;
+            
+            try {
+                const response = await fetch('/api/camera/rtsp/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enable: newStatus })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('success', result.message);
+                    loadRtspStatus(); // Refresh status
+                } else {
+                    showAlert('danger', 'Failed to toggle RTSP: ' + result.message);
+                    // Revert switch on failure
+                    this.checked = !newStatus;
+                }
+            } catch (error) {
+                showAlert('danger', 'Error toggling RTSP: ' + error.message);
+                // Revert switch on error
+                this.checked = !newStatus;
+            }
+        });
+
+        // Load RTSP status on page load
+        loadRtspStatus();
 
         // Toggle gain/shutter visibility based on exposure mode
         document.getElementById('isp_exposure').addEventListener('change', function() {

@@ -357,7 +357,7 @@ class CameraClient:
         try:
             # Get current network port settings
             body = [{"cmd": "GetNetPort", "action": 0, "param": {"channel": 0}}]
-            response = await self.host.send(body, expected_content_type="json")
+            response = await self.host.send(body)
             
             if response and len(response) > 0:
                 net_port = response[0].get("value", {}).get("NetPort", {})
@@ -379,7 +379,7 @@ class CameraClient:
                         }
                     }]
                     
-                    enable_response = await self.host.send(enable_body, expected_content_type="json")
+                    enable_response = await self.host.send(enable_body)
                     
                     if enable_response and enable_response[0].get("code") == 0:
                         logger.info("✅ RTSP enabled successfully on port 554")

@@ -153,6 +153,89 @@ def api_config():
             return jsonify({'success': False, 'message': str(e)}), 500
 
 
+@app.route('/api/camera/rtsp/status', methods=['GET'])
+def api_rtsp_status():
+    """Get RTSP status."""
+    global camera_client
+    
+    async def get_status():
+        global camera_client
+        
+        # Initialize camera client if needed
+        if camera_client is None:
+            camera_client = CameraClient(config)
+            await camera_client.connect()
+        
+        try:
+            body = [{"cmd": "GetNetPort", "action": 0, "param": {"channel": 0}}]
+            response = await camera_client.host.send(body)
+            
+            if response and len(response) > 0:
+                net_port = response[0].get("value", {}).get("NetPort", {})
+                rtsp_enabled = net_port.get("rtspEnable", 0)
+                rtsp_port = net_port.get("rtspPort", 554)
+                
+                return {
+                    'success': True,
+                    'enabled': rtsp_enabled == 1,
+                    'port': rtsp_port
+                }
+            
+            return {'success': False, 'message': 'No response from camera'}
+        except Exception as e:
+            return {'success': False, 'message': str(e)}
+    
+    with camera_client_lock:
+        result = run_async(get_status())
+    return jsonify(result)
+
+
+@app.route('/api/camera/rtsp/toggle', methods=['POST'])
+def api_rtsp_toggle():
+    """Toggle RTSP on/off."""
+    global camera_client
+    
+    async def toggle_rtsp():
+        global camera_client
+        
+        # Initialize camera client if needed
+        if camera_client is None:
+            camera_client = CameraClient(config)
+            await camera_client.connect()
+        
+        try:
+            data = request.json
+            enable = data.get('enable', True)
+            
+            body = [{
+                "cmd": "SetNetPort",
+                "action": 0,
+                "param": {
+                    "NetPort": {
+                        "rtspEnable": 1 if enable else 0,
+                        "rtspPort": 554
+                    }
+                }
+            }]
+            
+            response = await camera_client.host.send(body)
+            
+            if response and response[0].get("code") == 0:
+                status = "enabled" if enable else "disabled"
+                return {
+                    'success': True,
+                    'message': f'RTSP {status} successfully'
+                }
+            
+            return {'success': False, 'message': 'Failed to change RTSP settings'}
+        except Exception as e:
+            return {'success': False, 'message': str(e)}
+    
+    with camera_client_lock:
+        result = run_async(toggle_rtsp())
+    return jsonify(result)
+
+
 @app.route('/api/camera/settings', methods=['GET'])
 def get_camera_settings():
     """Get current camera ISP settings."""
