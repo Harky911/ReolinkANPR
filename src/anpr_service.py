@@ -215,10 +215,15 @@ class ANPRService:
                 
                 # Send notifications (only if it was actually saved, not a duplicate)
                 if event_id:
+                    # Convert relative image path to absolute for notifications
+                    image_path = result.get('image_path')
+                    if image_path:
+                        image_path = str(save_dir / image_path)
+                    
                     await self.notifier.send_detection(
                         result['plate_number'],
                         result['confidence'],
-                        result.get('image_path')
+                        image_path
                     )
             else:
                 logger.info("No valid plates found in frames")
