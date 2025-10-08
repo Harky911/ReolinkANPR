@@ -36,6 +36,8 @@ class ANPRService:
         self.notifier = Notifier(self.config)
 
         self.running = False
+        self.last_detection_time = 0
+        self.detection_cooldown = 30  # seconds - ignore new detections for 30s after starting a recording
 
     async def start(self):
         """Start the ANPR service."""
@@ -141,6 +143,17 @@ class ANPRService:
     async def _handle_vehicle_detection(self):
         """Handle TCP push event - record and process."""
         try:
+            # Check cooldown - prevent multiple recordings for same vehicle
+            current_time = time.time()
+            time_since_last = current_time - self.last_detection_time
+            
+            if time_since_last < self.detection_cooldown:
+                logger.info(f"🚫 Detection cooldown active ({time_since_last:.1f}s < {self.detection_cooldown}s) - skipping")
+                return
+            
+            # Update last detection time
+            self.last_detection_time = current_time
+            
             logger.info("Vehicle detected - starting recording with settings")
 
             # Start recording and settings application in parallel
