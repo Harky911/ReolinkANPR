@@ -136,6 +136,9 @@
                             <input type="url" class="form-control" id="ha_webhook" placeholder="http://homeassistant.local:8123/api/webhook/your-webhook-id">
                             <small class="text-muted">Create a webhook automation in HA, then paste the URL here</small>
                         </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="testHomeAssistantBtn">
+                            <i class="bi bi-send"></i> Test Home Assistant
+                        </button>
 
                         <hr>
 
@@ -159,6 +162,9 @@
                                 <small class="text-muted">Your Telegram user/group ID</small>
                             </div>
                         </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="testTelegramBtn">
+                            <i class="bi bi-send"></i> Test Telegram
+                        </button>
                     </div>
                 </div>
             </div>
@@ -805,6 +811,64 @@
         // Toggle notification settings visibility
         document.getElementById('notifications_enabled').addEventListener('change', function() {
             document.getElementById('notificationSettings').style.display = this.checked ? 'block' : 'none';
+        });
+
+        // Test Telegram notification
+        document.getElementById('testTelegramBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('testTelegramBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending...';
+            
+            try {
+                const response = await fetch('/api/notifications/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ service: 'telegram' })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('success', '✓ ' + result.message);
+                } else {
+                    showAlert('danger', '✗ ' + result.message);
+                }
+            } catch (error) {
+                showAlert('danger', 'Error testing Telegram: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+
+        // Test Home Assistant notification
+        document.getElementById('testHomeAssistantBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('testHomeAssistantBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending...';
+            
+            try {
+                const response = await fetch('/api/notifications/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ service: 'home_assistant' })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('success', '✓ ' + result.message);
+                } else {
+                    showAlert('danger', '✗ ' + result.message);
+                }
+            } catch (error) {
+                showAlert('danger', 'Error testing Home Assistant: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
         });
 
         // Save recording settings

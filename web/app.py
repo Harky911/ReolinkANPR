@@ -153,6 +153,35 @@ def api_config():
             return jsonify({'success': False, 'message': str(e)}), 500
 
 
+@app.route('/api/notifications/test', methods=['POST'])
+def api_test_notifications():
+    """Test notification settings."""
+    async def send_test():
+        try:
+            # Load current config
+            from src.notifier import Notifier
+            test_config = Config("config.yaml")
+            notifier = Notifier(test_config)
+            
+            # Get requested service from request
+            data = request.json or {}
+            service = data.get('service', 'all')
+            
+            # Send test
+            result = await notifier.send_test(service)
+            
+            if result:
+                return {'success': True, 'message': 'Test notification sent! Check your Telegram/Home Assistant.'}
+            else:
+                return {'success': False, 'message': 'No notification services enabled'}
+                
+        except Exception as e:
+            return {'success': False, 'message': f'Failed to send test: {str(e)}'}
+    
+    result = asyncio.run(send_test())
+    return jsonify(result)
+
+
 @app.route('/api/camera/rtsp/status', methods=['GET'])
 def api_rtsp_status():
     """Get RTSP status."""
