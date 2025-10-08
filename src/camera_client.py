@@ -102,6 +102,12 @@ class CameraClient:
 
                 # Process with lock (lock prevents simultaneous processing)
                 if self.processing_lock:
+                    # Try to acquire lock without waiting if already locked
+                    # This prevents queue buildup during processing
+                    if self.processing_lock.locked():
+                        logger.debug("Processing already in progress - skipping this event")
+                        return
+                    
                     async with self.processing_lock:
                         await self.processing_callback()
                 else:
