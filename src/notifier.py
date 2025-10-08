@@ -2,6 +2,7 @@
 
 import aiohttp
 from typing import Optional
+from pathlib import Path
 from src.logger import logger
 
 
@@ -81,22 +82,40 @@ class Notifier:
             logger.error(f"Failed to send to Home Assistant: {e}")
 
     async def _send_to_telegram(self, message: str, image_path: Optional[str]):
-        """Send message to Telegram."""
+        """Send message to Telegram with optional image."""
         try:
-            url = f"https://api.telegram.org/bot{self.telegram_token}/sendMessage"
-            
             async with aiohttp.ClientSession() as session:
-                data = {
-                    'chat_id': self.telegram_chat_id,
-                    'text': message,
-                    'parse_mode': 'HTML'
-                }
-                async with session.post(url, json=data, timeout=10) as response:
-                    if response.status == 200:
-                        logger.info(f"Sent to Telegram: {message}")
-                    else:
-                        response_text = await response.text()
-                        logger.warning(f"Telegram returned status {response.status}: {response_text}")
+                # If we have an image, send as photo with caption
+                if image_path and Path(image_path).exists():
+                    url = f"https://api.telegram.org/bot{self.telegram_token}/sendPhoto"
+                    
+                    # Read image file
+                    with open(image_path, 'rb') as img_file:
+                        form = aiohttp.FormData()
+                        form.add_field('chat_id', self.telegram_chat_id)
+                        form.add_field('caption', message, content_type='text/plain')
+                        form.add_field('photo', img_file, filename='detection.jpg', content_type='image/jpeg')
+                        
+                        async with session.post(url, data=form, timeout=30) as response:
+                            if response.status == 200:
+                                logger.info(f"Sent photo to Telegram: {message}")
+                            else:
+                                response_text = await response.text()
+                                logger.warning(f"Telegram photo returned status {response.status}: {response_text}")
+                else:
+                    # No image or image doesn't exist - send text only
+                    url = f"https://api.telegram.org/bot{self.telegram_token}/sendMessage"
+                    data = {
+                        'chat_id': self.telegram_chat_id,
+                        'text': message,
+                        'parse_mode': 'HTML'
+                    }
+                    async with session.post(url, json=data, timeout=10) as response:
+                        if response.status == 200:
+                            logger.info(f"Sent to Telegram: {message}")
+                        else:
+                            response_text = await response.text()
+                            logger.warning(f"Telegram returned status {response.status}: {response_text}")
         except Exception as e:
             logger.error(f"Failed to send to Telegram: {e}")
 
