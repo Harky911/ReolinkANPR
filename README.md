@@ -95,50 +95,77 @@ Automatic Number Plate Recognition (ANPR) system for Reolink cameras with AI veh
 
 ## Configuration
 
-### Basic Configuration
+### Quick Setup via Dashboard
 
-**Web UI Configuration** (Recommended)
-1. Start the service: `python run.py`
-2. Open `http://localhost:5001/config`
-3. Fill in your camera details, save, and restart
-4. All settings configurable through the web interface!
+**Step 1: Access Configuration Page**
+```bash
+# Start the service
+python run.py
 
-**Manual Configuration** (Advanced)
-
-```yaml
-camera:
-  host: 192.168.1.100      # Your camera IP
-  username: admin
-  password: your_password
-  name: Front Door
-  channel: 0
-  recording_duration: 5
-
-# Optional: Enable notifications
-notifications:
-  enabled: true
-  telegram:
-    enabled: true
-    bot_token: "your-telegram-bot-token"
-    chat_id: "your-chat-id"
-  home_assistant:
-    enabled: true
-    webhook_url: "http://homeassistant.local:8123/api/webhook/your-webhook-id"
+# Open in your browser
+http://localhost:5001/config
 ```
 
-**💡 Tip:** Use the web UI at `http://localhost:5001/config` for easier configuration!
+**Step 2: Configure Camera Settings**
+1. **Camera Name:** Give your camera a friendly name (e.g., "Front Door")
+2. **Camera IP/Host:** Enter your camera's IP address (e.g., `192.168.1.100`)
+3. **Username:** Usually `admin`
+4. **Password:** Your camera password (**Important:** Change from default!)
+5. **Camera Channel:** 
+   - `0` for standalone cameras
+   - `0, 1, 2...` for NVR channels
+6. **Recording Duration:** `6` seconds (adjust based on vehicle speed)
 
-### Advanced: Recording Settings
+**Step 3: Configure ALPR Settings**
+1. **Detection Model:** Keep default `YOLO v9 Tiny 640`
+2. **OCR Model:** Keep default `CCT-S v1 Global`
+3. **Min Confidence:** `0.90` (90% confidence threshold)
 
-Automatically optimize camera settings during recording for sharp plate capture.
+**Step 4: Save and Restart**
+1. Click **"Save Configuration"**
+2. Stop the service (Ctrl+C)
+3. Restart: `python run.py`
 
-**Configure via Web UI:**
-1. Go to `http://localhost:5001/config`
-2. Scroll to "Advanced Recording Settings"
-3. Enable "Before Recording" and set Manual exposure with fast shutter (1-4)
-4. Enable "After Recording" to restore Auto settings
+**That's it!** Visit `http://localhost:5001` to see detections.
 
-See the in-app **Documentation** page (`/docs`) for detailed guides and examples.
+### Optional: Camera Control Settings
+
+Fine-tune camera ISP settings in real-time:
+
+1. Scroll to **"Camera Control Settings"**
+2. Adjust settings and click **"Apply Camera Settings"**:
+   - **Exposure Mode:** Auto (recommended) or Manual
+   - **Day/Night Mode:** Black & White (recommended for plates)
+   - **Gain/Shutter:** Only visible in Manual mode
+
+**💡 Tip:** Black & White mode works best for plate reading!
+
+### Optional: Notifications
+
+Enable Home Assistant or Telegram notifications:
+
+1. Scroll to **"Notifications"**
+2. Check **"Enable Notifications"**
+3. Configure your preferred method:
+   - **Home Assistant:** Enter webhook URL
+   - **Telegram:** Enter bot token and chat ID
+4. Click **"Save Configuration"**
+
+### Optional: Advanced Recording Settings
+
+Optimize camera settings automatically during recording:
+
+1. Scroll to **"Advanced Recording Settings"**
+2. **Enable Before Recording Settings:**
+   - Exposure: Manual
+   - Day/Night: Black & White
+   - Gain: 1-40
+   - Shutter: 1-4 (fast shutter for moving vehicles)
+3. **Enable After Recording Settings:**
+   - Restore to Auto settings
+4. Click **"Save Recording Settings"**
+
+**💡 See In-App Documentation** (`http://localhost:5001/docs`) for detailed guides!
 
 ## Web Dashboard
 
