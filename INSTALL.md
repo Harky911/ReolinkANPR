@@ -46,7 +46,7 @@ brew install python3 ffmpeg
 
 ```bash
 # Clone or download the repository
-git clone https://github.com/yourusername/ReolinkANPR.git
+git clone https://github.com/Harky911/ReolinkANPR.git
 cd ReolinkANPR
 
 # Or if you downloaded a ZIP, extract it and navigate to the folder
@@ -84,12 +84,16 @@ pip install -r requirements.txt
 
 ## Step 4: Configure Your Camera
 
-### 4.1 Enable RTSP on Reolink Camera
+### 4.1 RTSP Streaming
 
-1. Open the Reolink app or web interface
-2. Go to **Settings** → **Network** → **Advanced**
-3. Enable **RTSP**
-4. Note the **RTSP port** (usually 554)
+RTSP is **automatically enabled** when ReolinkANPR starts.
+
+You can also manually toggle RTSP on/off via the web interface:
+1. Go to **http://localhost:5001/config**
+2. Scroll to **Camera Control Settings** → **RTSP Streaming**
+3. Use the toggle switch to enable/disable RTSP
+
+**Note:** RTSP port is 554 by default.
 
 ### 4.2 Enable AI Vehicle Detection
 
@@ -234,11 +238,35 @@ sudo systemctl start simplified-anpr
 sudo systemctl status simplified-anpr
 ```
 
+## Optional: Configure Notifications
+
+ReolinkANPR supports notifications via **Home Assistant** and **Telegram**:
+
+1. Go to **http://localhost:5001/config**
+2. Scroll to **Notifications** section
+3. Enable and configure your preferred notification method:
+   - **Home Assistant:** Enter webhook URL for automation triggers
+   - **Telegram:** Enter bot token and chat ID
+
+See the **In-App Documentation** (http://localhost:5001/docs) for detailed setup guides.
+
+## Optional: Advanced Recording Settings
+
+Optimize camera settings before/after recording for better plate capture:
+
+1. Go to **http://localhost:5001/config**
+2. Scroll to **Advanced Recording Settings**
+3. Configure camera ISP settings (exposure, gain, shutter, day/night mode)
+4. Settings are applied automatically during recording
+
+**Tip:** Black & White mode with manual gain (1-40) works best for plate reading.
+
 ## Next Steps
 
 - Monitor the dashboard for detections
 - Adjust camera position for best plate visibility
 - Fine-tune `min_confidence` and other settings via web config
+- Check **In-App Documentation** for camera settings tips
 - Review logs for any issues
 
 ## Support
