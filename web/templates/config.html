@@ -420,11 +420,34 @@
         document.getElementById('before_recording_enabled').addEventListener('change', function() {
             const isVisible = this.checked;
             document.getElementById('beforeRecordingSettings').style.display = isVisible ? 'block' : 'none';
-            if (isVisible) toggleBeforeGainShutter();
+            if (isVisible) {
+                // Set defaults if fields are empty
+                if (!document.getElementById('before_exposure').value) {
+                    document.getElementById('before_exposure').value = 'Manual';
+                    document.getElementById('before_daynight').value = 'Black&White';
+                    document.getElementById('before_binning').value = '0';
+                    document.getElementById('before_nr3d').value = '0';
+                    document.getElementById('before_gain_min').value = '1';
+                    document.getElementById('before_gain_max').value = '40';
+                    document.getElementById('before_shutter_min').value = '1';
+                    document.getElementById('before_shutter_max').value = '4';
+                }
+                toggleBeforeGainShutter();
+            }
         });
 
         document.getElementById('after_recording_enabled').addEventListener('change', function() {
-            document.getElementById('afterRecordingSettings').style.display = this.checked ? 'block' : 'none';
+            const isVisible = this.checked;
+            document.getElementById('afterRecordingSettings').style.display = isVisible ? 'block' : 'none';
+            if (isVisible) {
+                // Set defaults if fields are empty
+                if (!document.getElementById('after_exposure').value) {
+                    document.getElementById('after_exposure').value = 'Auto';
+                    document.getElementById('after_daynight').value = 'Black&White';
+                    document.getElementById('after_binning').value = '1';
+                    document.getElementById('after_nr3d').value = '0';
+                }
+            }
         });
 
         // RTSP toggle
