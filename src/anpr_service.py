@@ -156,6 +156,11 @@ class ANPRService:
             
             logger.info("Vehicle detected - starting recording with settings")
 
+            # Debug logging for settings check
+            has_attr = hasattr(self.config, 'before_recording_enabled')
+            enabled = self.config.before_recording_enabled if has_attr else None
+            logger.debug(f"Settings check: has_attr={has_attr}, enabled={enabled}")
+
             # Start recording and settings application in parallel
             if hasattr(self.config, 'before_recording_enabled') and self.config.before_recording_enabled:
                 # Apply settings and start recording at the SAME time
