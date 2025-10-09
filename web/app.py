@@ -148,9 +148,20 @@ def api_config():
             with open(config_file, 'w') as f:
                 yaml.dump(new_config, f, default_flow_style=False, sort_keys=False)
 
-            return jsonify({'success': True, 'message': 'Configuration saved. Restart service for changes to take effect.'})
+            return jsonify({'success': True, 'message': 'Configuration saved successfully!'})
         except Exception as e:
             return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/reload', methods=['POST'])
+def api_reload():
+    """Trigger service reload by creating a reload signal file."""
+    try:
+        reload_signal = Path(__file__).parent.parent / '.reload_signal'
+        reload_signal.touch()
+        return jsonify({'success': True, 'message': 'Reload signal sent. Configuration will reload within a few seconds.'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 @app.route('/api/notifications/test', methods=['POST'])

@@ -100,12 +100,71 @@ class ANPRService:
             logger.info("ANPR Service started successfully")
             logger.info(f"Monitoring {self.config.camera_name} for vehicles...")
             logger.info("=" * 60)
+            
+            # Start reload signal checker
+            asyncio.create_task(self._check_reload_signal())
 
             await self._monitoring_loop()
 
         except Exception as e:
             logger.error(f"Failed to start ANPR service: {e}")
             raise
+
+    async def reload(self):
+        """Reload configuration and reinitialize components without stopping."""
+        global logger
+        
+        logger.info("=" * 60)
+        logger.info("Reloading ANPR Service Configuration...")
+        logger.info("=" * 60)
+        
+        try:
+            # Reload config file
+            old_config_path = self.config._config_path
+            self.config = Config(old_config_path)
+            logger.info("✓ Configuration file reloaded")
+            
+            # Reconnect camera with new settings
+            if self.camera:
+                await self.camera.disconnect()
+                logger.info("✓ Disconnected from camera")
+            
+            self.camera = CameraClient(self.config)
+            connected = await self.camera.connect()
+            
+            if connected:
+                logger.info("✓ Reconnected to camera with new settings")
+                # Re-set the processing callback
+                self.camera.set_processing_callback(self._handle_vehicle_detection)
+            else:
+                logger.error("✗ Failed to reconnect to camera")
+                return False
+            
+            # Reload ALPR processor with new models
+            self.alpr = ALPRProcessor(self.config)
+            logger.info("✓ ALPR processor reloaded")
+            
+            # Reload notifier with new settings
+            self.notifier = Notifier(self.config)
+            logger.info("✓ Notifier reloaded")
+            
+            # Update logger level if changed
+            from .logger import setup_logger
+            logger = setup_logger(
+                "ReolinkANPR",
+                self.config.log_file,
+                self.config.log_level
+            )
+            logger.info("✓ Logger updated")
+            
+            logger.info("=" * 60)
+            logger.info("Configuration Reloaded Successfully!")
+            logger.info("=" * 60)
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to reload configuration: {e}")
+            return False
 
     async def stop(self):
         """Stop the ANPR service gracefully."""
@@ -124,6 +183,21 @@ class ANPRService:
 
         while self.running:
             await asyncio.sleep(60)
+
+    async def _check_reload_signal(self):
+        """Check for reload signal file periodically."""
+        reload_signal_path = Path(".") / ".reload_signal"
+        
+        while self.running:
+            try:
+                if reload_signal_path.exists():
+                    logger.info("Reload signal detected!")
+                    reload_signal_path.unlink()  # Remove signal file
+                    await self.reload()
+            except Exception as e:
+                logger.error(f"Error checking reload signal: {e}")
+            
+            await asyncio.sleep(2)  # Check every 2 seconds
 
     async def _monitoring_loop(self):
         """Main monitoring loop - wait for TCP push events."""
@@ -155,11 +229,6 @@ class ANPRService:
             self.last_detection_time = current_time
             
             logger.info("Vehicle detected - starting recording with settings")
-
-            # Debug logging for settings check
-            has_attr = hasattr(self.config, 'before_recording_enabled')
-            enabled = self.config.before_recording_enabled if has_attr else None
-            logger.debug(f"Settings check: has_attr={has_attr}, enabled={enabled}")
 
             # Start recording and settings application in parallel
             if hasattr(self.config, 'before_recording_enabled') and self.config.before_recording_enabled:
