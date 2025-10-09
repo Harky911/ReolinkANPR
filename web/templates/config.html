@@ -258,7 +258,7 @@
                                 <div class="row mb-3">
                                     <div class="col-md-3 mb-3">
                                         <label for="before_exposure" class="form-label">Exposure Mode</label>
-                                        <select class="form-select" id="before_exposure">
+                                        <select class="form-select" id="before_exposure" onchange="toggleBeforeGainShutter()">
                                             <option value="Auto">Auto</option>
                                             <option value="Manual">Manual</option>
                                         </select>
@@ -286,22 +286,22 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="row mb-3">
+                                <div class="row mb-3" id="beforeGainShutterSection" style="display: none;">
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Gain Range</label>
+                                        <label class="form-label">Gain Range (Manual Mode Only)</label>
                                         <div class="row">
                                             <div class="col-6">
-                                                <input type="number" class="form-control" id="before_gain_min" min="0" max="100" placeholder="Min">
-                                                <small class="text-muted">Min (1-40)</small>
+                                                <input type="number" class="form-control" id="before_gain_min" min="1" max="100" placeholder="Min">
+                                                <small class="text-muted">Min</small>
                                             </div>
                                             <div class="col-6">
-                                                <input type="number" class="form-control" id="before_gain_max" min="0" max="100" placeholder="Max">
-                                                <small class="text-muted">Max (1-40)</small>
+                                                <input type="number" class="form-control" id="before_gain_max" min="1" max="100" placeholder="Max">
+                                                <small class="text-muted">Max (1-40 recommended)</small>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Shutter Range</label>
+                                        <label class="form-label">Shutter Range (Manual Mode Only)</label>
                                         <div class="row">
                                             <div class="col-6">
                                                 <input type="number" class="form-control" id="before_shutter_min" min="0" max="125" placeholder="Min">
@@ -418,7 +418,9 @@
 
         // Toggle recording settings visibility
         document.getElementById('before_recording_enabled').addEventListener('change', function() {
-            document.getElementById('beforeRecordingSettings').style.display = this.checked ? 'block' : 'none';
+            const isVisible = this.checked;
+            document.getElementById('beforeRecordingSettings').style.display = isVisible ? 'block' : 'none';
+            if (isVisible) toggleBeforeGainShutter();
         });
 
         document.getElementById('after_recording_enabled').addEventListener('change', function() {
@@ -493,22 +495,23 @@
 
             if (config.recording?.before_recording_settings) {
                 const before = config.recording.before_recording_settings;
-                document.getElementById('before_exposure').value = before.exposure || 'Auto';
-                document.getElementById('before_daynight').value = before.dayNight || 'Auto';
-                document.getElementById('before_binning').value = before.binningMode || 0;
-                document.getElementById('before_nr3d').value = before.nr3d || 0;
+                document.getElementById('before_exposure').value = before.exposure || 'Manual';
+                document.getElementById('before_daynight').value = before.dayNight || 'Black&White';
+                document.getElementById('before_binning').value = before.binningMode !== undefined ? before.binningMode : 0;
+                document.getElementById('before_nr3d').value = before.nr3d !== undefined ? before.nr3d : 0;
                 document.getElementById('before_gain_min').value = before.gain?.min || 1;
-                document.getElementById('before_gain_max').value = before.gain?.max || 100;
-                document.getElementById('before_shutter_min').value = before.shutter?.min || 0;
-                document.getElementById('before_shutter_max').value = before.shutter?.max || 125;
+                document.getElementById('before_gain_max').value = before.gain?.max || 40;
+                document.getElementById('before_shutter_min').value = before.shutter?.min || 1;
+                document.getElementById('before_shutter_max').value = before.shutter?.max || 4;
+                toggleBeforeGainShutter();
             }
 
             if (config.recording?.after_recording_settings) {
                 const after = config.recording.after_recording_settings;
                 document.getElementById('after_exposure').value = after.exposure || 'Auto';
-                document.getElementById('after_daynight').value = after.dayNight || 'Auto';
-                document.getElementById('after_binning').value = after.binningMode || 1;
-                document.getElementById('after_nr3d').value = after.nr3d || 1;
+                document.getElementById('after_daynight').value = after.dayNight || 'Black&White';
+                document.getElementById('after_binning').value = after.binningMode !== undefined ? after.binningMode : 1;
+                document.getElementById('after_nr3d').value = after.nr3d !== undefined ? after.nr3d : 0;
             }
 
         } catch (error) {
@@ -720,6 +723,12 @@
             submitBtn.innerHTML = originalText;
         }
     });
+
+    function toggleBeforeGainShutter() {
+        const exposure = document.getElementById('before_exposure').value;
+        const gainShutterSection = document.getElementById('beforeGainShutterSection');
+        gainShutterSection.style.display = (exposure === 'Manual') ? 'flex' : 'none';
+    }
 
     function showAlert(message, type) {
         const alertHtml = `
