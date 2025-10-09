@@ -420,34 +420,11 @@
         document.getElementById('before_recording_enabled').addEventListener('change', function() {
             const isVisible = this.checked;
             document.getElementById('beforeRecordingSettings').style.display = isVisible ? 'block' : 'none';
-            if (isVisible) {
-                // Set defaults if fields are empty
-                if (!document.getElementById('before_exposure').value) {
-                    document.getElementById('before_exposure').value = 'Manual';
-                    document.getElementById('before_daynight').value = 'Black&White';
-                    document.getElementById('before_binning').value = '0';
-                    document.getElementById('before_nr3d').value = '0';
-                    document.getElementById('before_gain_min').value = '1';
-                    document.getElementById('before_gain_max').value = '40';
-                    document.getElementById('before_shutter_min').value = '1';
-                    document.getElementById('before_shutter_max').value = '4';
-                }
-                toggleBeforeGainShutter();
-            }
+            if (isVisible) toggleBeforeGainShutter();
         });
 
         document.getElementById('after_recording_enabled').addEventListener('change', function() {
-            const isVisible = this.checked;
-            document.getElementById('afterRecordingSettings').style.display = isVisible ? 'block' : 'none';
-            if (isVisible) {
-                // Set defaults if fields are empty
-                if (!document.getElementById('after_exposure').value) {
-                    document.getElementById('after_exposure').value = 'Auto';
-                    document.getElementById('after_daynight').value = 'Black&White';
-                    document.getElementById('after_binning').value = '1';
-                    document.getElementById('after_nr3d').value = '0';
-                }
-            }
+            document.getElementById('afterRecordingSettings').style.display = this.checked ? 'block' : 'none';
         });
 
         // RTSP toggle
@@ -516,26 +493,24 @@
             document.getElementById('after_recording_enabled').checked = afterEnabled;
             document.getElementById('afterRecordingSettings').style.display = afterEnabled ? 'block' : 'none';
 
-            if (config.recording?.before_recording_settings) {
-                const before = config.recording.before_recording_settings;
-                document.getElementById('before_exposure').value = before.exposure || 'Manual';
-                document.getElementById('before_daynight').value = before.dayNight || 'Black&White';
-                document.getElementById('before_binning').value = before.binningMode !== undefined ? before.binningMode : 0;
-                document.getElementById('before_nr3d').value = before.nr3d !== undefined ? before.nr3d : 0;
-                document.getElementById('before_gain_min').value = before.gain?.min || 1;
-                document.getElementById('before_gain_max').value = before.gain?.max || 40;
-                document.getElementById('before_shutter_min').value = before.shutter?.min || 1;
-                document.getElementById('before_shutter_max').value = before.shutter?.max || 4;
-                toggleBeforeGainShutter();
-            }
+            // Load before recording settings with good defaults
+            const before = config.recording?.before_recording_settings || {};
+            document.getElementById('before_exposure').value = before.exposure || 'Manual';
+            document.getElementById('before_daynight').value = before.dayNight || 'Black&White';
+            document.getElementById('before_binning').value = before.binningMode !== undefined ? before.binningMode : 0;
+            document.getElementById('before_nr3d').value = before.nr3d !== undefined ? before.nr3d : 0;
+            document.getElementById('before_gain_min').value = before.gain?.min || 1;
+            document.getElementById('before_gain_max').value = before.gain?.max || 40;
+            document.getElementById('before_shutter_min').value = before.shutter?.min || 1;
+            document.getElementById('before_shutter_max').value = before.shutter?.max || 4;
+            toggleBeforeGainShutter();
 
-            if (config.recording?.after_recording_settings) {
-                const after = config.recording.after_recording_settings;
-                document.getElementById('after_exposure').value = after.exposure || 'Auto';
-                document.getElementById('after_daynight').value = after.dayNight || 'Black&White';
-                document.getElementById('after_binning').value = after.binningMode !== undefined ? after.binningMode : 1;
-                document.getElementById('after_nr3d').value = after.nr3d !== undefined ? after.nr3d : 0;
-            }
+            // Load after recording settings with good defaults
+            const after = config.recording?.after_recording_settings || {};
+            document.getElementById('after_exposure').value = after.exposure || 'Auto';
+            document.getElementById('after_daynight').value = after.dayNight || 'Black&White';
+            document.getElementById('after_binning').value = after.binningMode !== undefined ? after.binningMode : 1;
+            document.getElementById('after_nr3d').value = after.nr3d !== undefined ? after.nr3d : 0;
 
         } catch (error) {
             showAlert('Failed to load configuration: ' + error.message, 'danger');

@@ -39,26 +39,26 @@ camera:
 # Automatically change camera ISP settings during recording
 recording:
   # Before Recording: Applied when vehicle detected (for sharp plate capture)
-  before_recording_enabled: true
+  before_recording_enabled: false
   before_recording_settings:
-    exposure: Manual        # Manual for fixed shutter speed
-    dayNight: Auto          # Auto, Color, or Black&White
-    binningMode: 0          # 0=Off (sharper), 1=Auto
-    nr3d: 0                 # 0=Off (less blur), 1=On
+    exposure: Manual              # Manual for fixed shutter speed
+    dayNight: Black&White         # Black&White recommended for better plate reading
+    binningMode: 0                # 0=Off (sharper)
+    nr3d: 0                       # 0=Off (less blur)
     gain:
       min: 1
-      max: 40              # Lower gain = less noise
+      max: 40                     # 1-40 recommended for cleaner images
     shutter:
       min: 1
-      max: 4               # Fast shutter (1-4ms) to freeze motion
+      max: 4                      # Fast shutter (1-4ms) to freeze motion
   
   # After Recording: Applied after recording completes (restore normal settings)
-  after_recording_enabled: true
+  after_recording_enabled: false
   after_recording_settings:
-    exposure: Auto          # Auto for normal viewing
-    dayNight: Auto
-    binningMode: 1          # Auto
-    nr3d: 1                 # On for smoother video
+    exposure: Auto                # Auto for normal viewing
+    dayNight: Black&White         # Keep Black&White or set to Auto
+    binningMode: 1                # 1=Enabled
+    nr3d: 0                       # 0=Off
 
 # System Settings
 system:
