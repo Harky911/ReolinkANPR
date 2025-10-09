@@ -88,23 +88,30 @@ class ALPRProcessor:
                 # Process each detection
                 for result in results:
                     plate_text = result.ocr.text.upper().replace(' ', '')
-                    confidence = result.ocr.confidence
-
-                    # Validate plate format
-                    if not self._is_valid_plate(plate_text):
-                        logger.debug(f"Frame {i+1}: Invalid plate format: {plate_text}")
-                        continue
+                    ocr_confidence = result.ocr.confidence
+                    detection_confidence = result.detection.confidence
 
                     # Check confidence threshold
-                    if confidence < self.config.min_confidence:
-                        logger.debug(f"Frame {i+1}: Low confidence {confidence:.3f} for {plate_text}")
+                    if ocr_confidence < self.config.min_confidence:
+                        logger.debug(f"Frame {i+1}: Low confidence {ocr_confidence:.3f} for {plate_text}")
                         continue
 
-                    logger.info(f"Frame {i+1}: {plate_text} (confidence: {confidence:.3f})")
+                    logger.info(f"Frame {i+1}: {plate_text} (confidence: {ocr_confidence:.3f})")
 
-                    # Track best result
-                    if confidence > best_confidence:
-                        best_confidence = confidence
+                    # Track best result - OCR priority, detection as tiebreaker
+                    is_better = False
+                    if best_result is None:
+                        is_better = True
+                    elif ocr_confidence > best_result.ocr.confidence:
+                        # Higher OCR confidence always wins
+                        is_better = True
+                    elif ocr_confidence == best_result.ocr.confidence:
+                        # Same OCR confidence - use detection as tiebreaker
+                        if detection_confidence > best_result.detection.confidence:
+                            is_better = True
+                    
+                    if is_better:
+                        best_confidence = ocr_confidence
                         best_result = result
                         best_image = img.copy()
 
@@ -157,33 +164,6 @@ class ALPRProcessor:
 
         logger.info("No valid plates detected in any frame")
         return None
-
-    def _is_valid_plate(self, text: str) -> bool:
-        """
-        Validate UK license plate format.
-
-        Args:
-            text: Plate text to validate
-
-        Returns:
-            True if valid UK plate format
-        """
-        # Remove spaces
-        text = text.replace(' ', '').upper()
-
-        # UK plate patterns
-        patterns = [
-            r'^[A-Z]{2}[0-9]{2}[A-Z]{3}$',  # Current format: AB12CDE
-            r'^[A-Z][0-9]{1,3}[A-Z]{3}$',   # Prefix format: A123BCD
-            r'^[A-Z]{3}[0-9]{1,3}[A-Z]$',   # Suffix format: ABC123D
-            r'^[A-Z]{1,3}[0-9]{1,4}$',      # Older formats
-        ]
-
-        for pattern in patterns:
-            if re.match(pattern, text):
-                return True
-
-        return False
 
     def _save_debug_frames(self, frame_bytes_list: List[bytes], save_dir: Path):
         """Save first and last frames for debugging when no plates detected."""
