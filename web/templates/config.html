@@ -205,7 +205,7 @@
                             <div class="row">
                                 <div class="col-md-3 mb-3">
                                     <label for="current_exposure" class="form-label">Exposure Mode</label>
-                                    <select class="form-select" id="current_exposure">
+                                    <select class="form-select" id="current_exposure" onchange="toggleCurrentGainShutter()">
                                         <option value="Auto">Auto</option>
                                         <option value="Manual">Manual</option>
                                     </select>
@@ -231,6 +231,34 @@
                                         <option value="0">Disabled</option>
                                         <option value="1">Enabled</option>
                                     </select>
+                                </div>
+                            </div>
+                            <div class="row mb-3" id="currentGainShutterSection" style="display: none;">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Gain Range (Manual Mode Only)</label>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <input type="number" class="form-control" id="current_gain_min" min="1" max="100" placeholder="Min">
+                                            <small class="text-muted">Min</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="number" class="form-control" id="current_gain_max" min="1" max="100" placeholder="Max">
+                                            <small class="text-muted">Max (1-40 recommended)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Shutter Range (Manual Mode Only)</label>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <input type="number" class="form-control" id="current_shutter_min" min="0" max="125" placeholder="Min">
+                                            <small class="text-muted">Min</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="number" class="form-control" id="current_shutter_max" min="0" max="125" placeholder="Max">
+                                            <small class="text-muted">Max</small>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <button type="button" class="btn btn-primary" onclick="applyCurrentSettings()">
@@ -444,6 +472,19 @@
                 document.getElementById('current_daynight').value = settings.dayNight || 'Auto';
                 document.getElementById('current_binning').value = settings.binningMode || 0;
                 document.getElementById('current_nr3d').value = settings.nr3d || 0;
+                
+                // Load gain/shutter if available
+                if (settings.gain) {
+                    document.getElementById('current_gain_min').value = settings.gain.min || 1;
+                    document.getElementById('current_gain_max').value = settings.gain.max || 100;
+                }
+                if (settings.shutter) {
+                    document.getElementById('current_shutter_min').value = settings.shutter.min || 0;
+                    document.getElementById('current_shutter_max').value = settings.shutter.max || 125;
+                }
+                
+                // Show/hide gain/shutter based on exposure mode
+                toggleCurrentGainShutter();
             }
         } catch (error) {
             console.error('Failed to load current camera settings:', error);
@@ -561,6 +602,12 @@
         }
     }
 
+    function toggleCurrentGainShutter() {
+        const exposure = document.getElementById('current_exposure').value;
+        const gainShutterSection = document.getElementById('currentGainShutterSection');
+        gainShutterSection.style.display = (exposure === 'Manual') ? 'flex' : 'none';
+    }
+
     async function applyCurrentSettings() {
         const settings = {
             exposure: document.getElementById('current_exposure').value,
@@ -568,6 +615,18 @@
             binningMode: parseInt(document.getElementById('current_binning').value),
             nr3d: parseInt(document.getElementById('current_nr3d').value)
         };
+
+        // Add gain/shutter if Manual mode
+        if (settings.exposure === 'Manual') {
+            settings.gain = {
+                min: parseInt(document.getElementById('current_gain_min').value) || 1,
+                max: parseInt(document.getElementById('current_gain_max').value) || 100
+            };
+            settings.shutter = {
+                min: parseInt(document.getElementById('current_shutter_min').value) || 0,
+                max: parseInt(document.getElementById('current_shutter_max').value) || 125
+            };
+        }
 
         try {
             const response = await fetch('/api/camera/settings', {
