@@ -120,8 +120,8 @@ class ANPRService:
         
         try:
             # Reload config file
-            old_config_path = self.config._config_path
-            self.config = Config(old_config_path)
+            old_config_path = self.config.config_path
+            self.config = Config(str(old_config_path))
             logger.info("✓ Configuration file reloaded")
             
             # Reconnect camera with new settings
