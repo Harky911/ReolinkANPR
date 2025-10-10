@@ -11,6 +11,9 @@ def setup_logger(name: str = "ReolinkANPR", log_file: str = None, level: str = "
     logger = logging.getLogger(name)
     logger.setLevel(getattr(logging, level.upper()))
 
+    # Remove all existing handlers to prevent duplicates on reload
+    logger.handlers.clear()
+
     # Create formatters
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
